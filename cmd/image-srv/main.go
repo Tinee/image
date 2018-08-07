@@ -2,9 +2,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"os"
-	"time"
+	"os/signal"
+	"syscall"
 
 	"github.com/aws/aws-sdk-go/aws"
 
@@ -44,6 +46,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error trying to open a connection to the server: %v", err)
 	}
-	ticker := time.NewTicker(1 * time.Minute)
-	<-ticker.C
+
+	c := make(chan os.Signal)
+	signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
+
+	fmt.Println("Got a signal to terminate process", <-c)
 }
