@@ -52,7 +52,7 @@ func TestImageHandler_handlePost(t *testing.T) {
 	}
 }
 
-func TestImageHandler_handleGetWithID(t *testing.T) {
+func TestImageHandler_handleGetWithIDAndConvertToJPEG(t *testing.T) {
 	empty := strings.NewReader("")
 	bs, _ := ioutil.ReadAll(getMockImage("github.png"))
 	fakeImage := progimage.Image{
@@ -92,6 +92,49 @@ func TestImageHandler_handleGetWithID(t *testing.T) {
 
 	if response.Data.ContentType != "image/jpeg" {
 		t.Fatalf("Expected contentType to be image/jpeg but got %v", response.Data.ContentType)
+	}
+}
+
+func TestImageHandler_handleGetWithIDAndConvertToPNG(t *testing.T) {
+	empty := strings.NewReader("")
+	bs, _ := ioutil.ReadAll(getMockImage("github.jpg"))
+	fakeImage := progimage.Image{
+		Body:        bs,
+		ID:          "fakeImageID",
+		ContentType: "image/jpeg",
+	}
+
+	svcMock := getMockStorage()
+	h := Handler{}
+	h.ImageHandler = &ImageHandler{
+		Storage: svcMock,
+	}
+	svcMock.GetFn = func(id string) (*progimage.Image, error) {
+		return &fakeImage, nil
+	}
+
+	req, err := http.NewRequest(http.MethodGet, "/image?id="+fakeImage.ID+".png", empty)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Expected code to be %v but got %v", http.StatusOK, rec.Code)
+	}
+
+	if !svcMock.GetInvoked {
+		t.Fatal("Expected GetInvoked to have been invoked")
+	}
+	var response struct {
+		Data progimage.Image
+	}
+	json.NewDecoder(rec.Body).Decode(&response)
+
+	if response.Data.ContentType != "image/png" {
+		t.Fatalf("Expected contentType to be image/png but got %v", response.Data.ContentType)
 	}
 }
 
