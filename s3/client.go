@@ -18,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3"
 )
 
+// Client represents the struct we'll use to communicate to AWS S3.
 type Client struct {
 	s3      progimage.S3
 	bucket  string
@@ -26,13 +27,14 @@ type Client struct {
 
 // NewClient returns an instance of a Client
 func NewClient(bucket string, s *session.Session) *Client {
-	// Set's a production ready seed.
+	// Set's a production ready sed.
 	rand.Seed(time.Now().UnixNano())
 	s3 := s3.New(s)
 
 	return &Client{s3, bucket, s}
 }
 
+// SaveImage takes a reader and tries to save the image on AWS S3.
 func (c *Client) SaveImage(r io.Reader) (string, error) {
 	buff := bytes.Buffer{}
 	tee := io.TeeReader(r, &buff)
@@ -57,6 +59,7 @@ func (c *Client) SaveImage(r io.Reader) (string, error) {
 	return id, nil
 }
 
+// Get takes an ID and attempts to get it from the s3 bucket.
 func (c *Client) Get(id string) (*progimage.Image, error) {
 	res, err := c.s3.GetObject(&s3.GetObjectInput{
 		Bucket: aws.String(c.bucket),
